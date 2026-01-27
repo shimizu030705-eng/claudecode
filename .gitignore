@@ -1,0 +1,14 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+venv/
+.venv/
+
+# Output files
+output/*.mp4
+
+# Temporary files
+*.tmp
+.DS_Store
