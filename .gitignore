@@ -13,6 +13,7 @@ dist/
 
 # Config with secrets
 config.json
+credentials.json
 
 # IDE
 .vscode/

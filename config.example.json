@@ -1,4 +1,9 @@
 {
+  "googleSheets": {
+    "spreadsheetId": "your_spreadsheet_id_here",
+    "credentialsPath": "./credentials.json",
+    "sheetName": "リサーチ結果"
+  },
   "schedules": [
     {
       "keyword": "AI",
@@ -13,13 +18,6 @@
       "minLikes": 5,
       "maxResults": 30,
       "enabled": true
-    },
-    {
-      "keyword": "マーケティング",
-      "cronExpression": "0 9 * * 1-5",
-      "minLikes": 20,
-      "maxResults": 20,
-      "enabled": false
     }
   ]
 }

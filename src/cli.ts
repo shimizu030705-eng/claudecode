@@ -4,7 +4,7 @@ import * as path from 'path';
 import dotenv from 'dotenv';
 import { ResearchService } from './services/research-service';
 import { Scheduler, CronPresets } from './services/scheduler';
-import { AppConfig, ScheduleConfig } from './types';
+import { AppConfig, ScheduleConfig, GoogleSheetsConfig } from './types';
 
 // Load environment variables
 dotenv.config();
@@ -14,30 +14,40 @@ const program = new Command();
 function loadConfig(): AppConfig {
   const configPath = path.join(process.cwd(), 'config.json');
   let schedules: ScheduleConfig[] = [];
+  let googleSheets: GoogleSheetsConfig | undefined;
 
   if (fs.existsSync(configPath)) {
     const configData = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
     schedules = configData.schedules || [];
+    googleSheets = configData.googleSheets;
+  }
+
+  // Allow env vars to override config file
+  if (process.env.GOOGLE_SPREADSHEET_ID) {
+    googleSheets = {
+      spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
+      credentialsPath: process.env.GOOGLE_CREDENTIALS_PATH || './credentials.json',
+      sheetName: process.env.GOOGLE_SHEET_NAME,
+    };
   }
 
   return {
     threadsAccessToken: process.env.THREADS_ACCESS_TOKEN || '',
     threadsUserId: process.env.THREADS_USER_ID || '',
-    claudeApiKey: process.env.CLAUDE_API_KEY,
-    outputDir: process.env.OUTPUT_DIR || './reports',
+    googleSheets,
     schedules,
   };
 }
 
 program
   .name('threads-research')
-  .description('Automated Threads research tool')
+  .description('Automated Threads research tool with Google Sheets output')
   .version('1.0.0');
 
 // Search command
 program
   .command('search')
-  .description('Search and analyze Threads posts by keyword')
+  .description('Search Threads posts by keyword and save to Google Sheets')
   .argument('<keyword>', 'Keyword to search for')
   .option('-l, --min-likes <number>', 'Minimum likes filter', '0')
   .option('-m, --max-results <number>', 'Maximum results', '50')
@@ -53,6 +63,7 @@ program
     }
 
     const researchService = new ResearchService(config);
+    await researchService.initialize();
 
     try {
       const report = await researchService.runResearch(keyword, {
@@ -86,6 +97,11 @@ program
       console.error('❌ No schedules configured in config.json');
       console.log('\nExample config.json:');
       console.log(JSON.stringify({
+        googleSheets: {
+          spreadsheetId: 'your_spreadsheet_id',
+          credentialsPath: './credentials.json',
+          sheetName: 'リサーチ結果',
+        },
         schedules: [
           {
             keyword: 'AI',
@@ -100,6 +116,8 @@ program
     }
 
     const researchService = new ResearchService(config);
+    await researchService.initialize();
+
     const scheduler = new Scheduler(researchService);
 
     scheduler.loadSchedules(config.schedules);
@@ -132,7 +150,7 @@ program
   .option('-m, --max-results <number>', 'Maximum results', '50')
   .action((keyword: string, options) => {
     const configPath = path.join(process.cwd(), 'config.json');
-    let config: { schedules: ScheduleConfig[] } = { schedules: [] };
+    let config: { schedules: ScheduleConfig[]; googleSheets?: GoogleSheetsConfig } = { schedules: [] };
 
     if (fs.existsSync(configPath)) {
       config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));

@@ -32,20 +32,10 @@ export interface EngagementAnalysis {
   engagementTrend: 'rising' | 'stable' | 'declining';
 }
 
-export interface AIAnalysisResult {
-  summary: string;
-  keyTopics: string[];
-  sentiment: 'positive' | 'neutral' | 'negative' | 'mixed';
-  recommendations: string[];
-  trendingThemes: string[];
-  analyzedAt: string;
-}
-
 export interface ResearchReport {
   keyword: string;
   searchResult: SearchResult;
   engagementAnalysis: EngagementAnalysis;
-  aiAnalysis: AIAnalysisResult;
   generatedAt: string;
 }
 
@@ -57,10 +47,15 @@ export interface ScheduleConfig {
   enabled: boolean;
 }
 
+export interface GoogleSheetsConfig {
+  spreadsheetId: string;
+  credentialsPath: string;
+  sheetName?: string;
+}
+
 export interface AppConfig {
   threadsAccessToken: string;
   threadsUserId: string;
-  claudeApiKey?: string;
-  outputDir: string;
+  googleSheets?: GoogleSheetsConfig;
   schedules: ScheduleConfig[];
 }
