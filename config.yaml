@@ -1,0 +1,26 @@
+# ジム動画広告 自動生成 設定ファイル
+
+# OpenAI TTS設定
+openai:
+  model: "tts-1"           # tts-1（標準）または tts-1-hd（高音質）
+  voice: "nova"            # 音声: alloy, echo, fable, onyx, nova, shimmer
+                           # nova: 明るく親しみやすい女性声（おすすめ）
+                           # onyx: 落ち着いた男性声
+                           # alloy: ニュートラルな声
+
+# 動画設定
+video:
+  intro_duration: 3        # 冒頭動画の最低秒数（音声に合わせて自動調整）
+  width: 1920              # 解像度（横）
+  height: 1080             # 解像度（縦）
+  fps: 30                  # フレームレート
+  font_size: 72            # テロップの文字サイズ
+  font_color: "white"      # テロップの文字色
+  background_color: "black" # 背景色
+
+# テキスト設定
+text:
+  template: "{location}でジムをお探しの方へ"
+  # カスタム例:
+  # template: "{location}エリアで24時間ジムをお探しの方へ"
+  # template: "{location}駅周辺でパーソナルジムをお探しの方へ"
