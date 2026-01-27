@@ -1,0 +1,25 @@
+{
+  "schedules": [
+    {
+      "keyword": "AI",
+      "cronExpression": "0 9,12,18 * * *",
+      "minLikes": 10,
+      "maxResults": 50,
+      "enabled": true
+    },
+    {
+      "keyword": "スタートアップ",
+      "cronExpression": "0 8,10,12,14,16,18,20 * * *",
+      "minLikes": 5,
+      "maxResults": 30,
+      "enabled": true
+    },
+    {
+      "keyword": "マーケティング",
+      "cronExpression": "0 9 * * 1-5",
+      "minLikes": 20,
+      "maxResults": 20,
+      "enabled": false
+    }
+  ]
+}
