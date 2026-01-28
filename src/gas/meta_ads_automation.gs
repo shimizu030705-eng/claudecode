@@ -592,18 +592,28 @@ function getColIndexByHeader(sheet, headerName) {
 // ============================================
 
 function combineDateTime(date, time) {
-  let dateObj = date instanceof Date ? new Date(date) : new Date(date);
-  if (!date) throw new Error('開始日が入力されていません');
-  if (time) {
+  let dateObj;
+
+  // 日付が空の場合は現在時刻を使用
+  if (!date || date === '') {
+    dateObj = new Date();
+  } else if (date instanceof Date) {
+    dateObj = new Date(date);
+  } else {
+    dateObj = new Date(date);
+  }
+
+  // 時刻の設定
+  if (time && time !== '') {
     if (time instanceof Date) {
       dateObj.setHours(time.getHours(), time.getMinutes(), 0, 0);
     } else {
       const timeParts = time.toString().split(':');
       dateObj.setHours(parseInt(timeParts[0], 10), parseInt(timeParts[1], 10) || 0, 0, 0);
     }
-  } else {
-    dateObj.setHours(0, 0, 0, 0);
   }
+  // 時刻が空の場合は現在時刻のまま（日付のみ指定の場合は0:00にしない）
+
   return Math.floor(dateObj.getTime() / 1000);
 }
 
