@@ -242,7 +242,7 @@ function getInstagramAccountId() {
 
 function createCampaign(settings, campaign) {
   const payload = {
-    name: `${campaign.campaignNumber}_${campaign.campaignName}`,
+    name: campaign.campaignName,
     objective: META_API.CAMPAIGN_OBJECTIVE,
     status: 'PAUSED',
     special_ad_categories: '[]',
