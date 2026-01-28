@@ -181,7 +181,7 @@ function processCampaign(campaign, settings) {
     imageHash = uploadImage(settings, imageBlob);
   }
 
-  const adIdVideo = createAd(settings, campaign, adsetId, imageHash, videoId, videoThumbnailUrl);
+  const adIdVideo = createAd(settings, campaign, adsetId, imageHash, videoId, videoThumbnailUrl, videoFileId);
 
   return { campaignId, adsetId, adIdVideo, videoId };
 }
@@ -354,10 +354,10 @@ function getVideoThumbnail(settings, videoId) {
   return (response.thumbnails && response.thumbnails.data && response.thumbnails.data.length > 0) ? response.thumbnails.data[0].uri : null;
 }
 
-function createAd(settings, campaign, adsetId, imageHash, videoId, videoThumbnailUrl) {
+function createAd(settings, campaign, adsetId, imageHash, videoId, videoThumbnailUrl, driveFileId) {
   const creativeId = createAdCreative(settings, campaign, imageHash, videoId, videoThumbnailUrl);
   const payload = {
-    name: videoId,
+    name: driveFileId,
     adset_id: adsetId,
     creative: JSON.stringify({ creative_id: creativeId }),
     status: 'PAUSED',
