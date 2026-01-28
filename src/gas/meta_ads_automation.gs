@@ -841,3 +841,42 @@ function buildOutputIndex(outSheet) {
   }
   return map;
 }
+
+// デバッグ用：VideosシートとAnalysisシートのB列を比較
+function debugCompareIds() {
+  const ss = SpreadsheetApp.getActive();
+  const videosSheet = ss.getSheetByName(SHEET_NAMES.VIDEOS);
+  const analysisSheet = ss.getSheetByName(SHEET_NAMES.ANALYSIS);
+
+  if (!videosSheet) {
+    Logger.log('videosシートが見つかりません');
+    return;
+  }
+  if (!analysisSheet) {
+    Logger.log('analysisシートが見つかりません');
+    return;
+  }
+
+  Logger.log('=== Videosシートの内容 ===');
+  const videosLastRow = videosSheet.getLastRow();
+  if (videosLastRow >= 2) {
+    const videosData = videosSheet.getRange(2, 1, videosLastRow - 1, 4).getValues();
+    for (let i = 0; i < videosData.length; i++) {
+      Logger.log(`行${i+2}: A(動画名)="${videosData[i][0]}", B(固有ID)="${videosData[i][1]}", C(URL)="${videosData[i][2]}"`);
+    }
+  } else {
+    Logger.log('データがありません');
+  }
+
+  Logger.log('');
+  Logger.log('=== Analysisシートの内容 ===');
+  const analysisLastRow = analysisSheet.getLastRow();
+  if (analysisLastRow >= 2) {
+    const analysisData = analysisSheet.getRange(2, 1, analysisLastRow - 1, 2).getValues();
+    for (let i = 0; i < analysisData.length; i++) {
+      Logger.log(`行${i+2}: A(動画名)="${analysisData[i][0]}", B(固有ID)="${analysisData[i][1]}"`);
+    }
+  } else {
+    Logger.log('データがありません');
+  }
+}
