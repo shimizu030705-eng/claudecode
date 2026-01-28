@@ -170,7 +170,8 @@ function processCampaign(campaign, settings) {
   const videoId = videoResult.videoId;
   const videoThumbnailUrl = videoResult.thumbnailUrl;
 
-  addVideoRecord(videoBlob.getName(), videoId, campaign.videoUrl, new Date());
+  // VideosシートにはDrive File IDを記録（Analysisシートと統一するため）
+  addVideoRecord(videoBlob.getName(), videoFileId, campaign.videoUrl, new Date());
 
   const campaignId = createCampaign(settings, campaign);
   const adsetId = createAdSet(settings, campaign, campaignId);
