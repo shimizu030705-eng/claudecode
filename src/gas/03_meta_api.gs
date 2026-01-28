@@ -144,27 +144,17 @@ function uploadImage(settings, imageBlob) {
 function uploadVideo(settings, videoBlob) {
   const url = `${META_API.BASE_URL}/${settings.adAccountId}/advideos`;
 
-  const boundary = '----FormBoundary' + Math.random().toString(36).substring(2);
-
-  const payload = Utilities.newBlob(
-    '--' + boundary + '\r\n' +
-    'Content-Disposition: form-data; name="access_token"\r\n\r\n' +
-    settings.accessToken + '\r\n' +
-    '--' + boundary + '\r\n' +
-    'Content-Disposition: form-data; name="source"; filename="' + videoBlob.getName() + '"\r\n' +
-    'Content-Type: ' + videoBlob.getContentType() + '\r\n\r\n'
-  ).getBytes()
-    .concat(videoBlob.getBytes())
-    .concat(Utilities.newBlob('\r\n--' + boundary + '--\r\n').getBytes());
-
-  const options = {
-    method: 'post',
-    contentType: 'multipart/form-data; boundary=' + boundary,
-    payload: payload,
-    muteHttpExceptions: true
+  // GASのネイティブmultipart/form-dataを使用（メモリ効率が良い）
+  const payload = {
+    'access_token': settings.accessToken,
+    'source': videoBlob
   };
 
-  const response = JSON.parse(UrlFetchApp.fetch(url, options).getContentText());
+  const response = JSON.parse(UrlFetchApp.fetch(url, {
+    method: 'post',
+    payload: payload,
+    muteHttpExceptions: true
+  }).getContentText());
 
   if (response.id) {
     waitForVideoReady(settings, response.id);
