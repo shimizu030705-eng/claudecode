@@ -563,7 +563,7 @@ function setupVideosSheet(ss) {
 
 function setupAnalysisSheet(ss) {
   let sheet = ss.getSheetByName(SHEET_NAMES.ANALYSIS) || ss.insertSheet(SHEET_NAMES.ANALYSIS);
-  const headers = ['ファイル名', 'ファイルID', 'フォーマット', '時間', '尺_秒', '冒頭3秒の掴み_映像', '（正）冒頭映像タイプ（主）', '（正）冒頭映像タグ1', '（正）冒頭映像タグ2', '（正）冒頭映像タグ3', '冒頭3秒の掴み_コピー', '（正）冒頭コピータイプ（主）', '（正）冒頭コピータグ1', '（正）冒頭コピータグ2', '（正）冒頭コピータグ3', 'ナレーション', 'BGM', '登場人物', 'シーン構成やテンポ', '主な訴求軸', '（正）訴求軸（主）', '（正）訴求タグ1', '（正）訴求タグ2', '喚起している感情', '（正）感情（主）', '（正）感情タグ1', '最後のCTA', '（正）CTAタイプ（主）', '（正）CTAタグ1', '（正）CTAタグ2', '（正）CTAタグ3', '（正）辞書バージョン', '（正）要レビュー', '（正）分類メモ', 'ステータス', '最終更新'];
+  const headers = ['動画名', '固有ID', 'フォーマット', '時間', '尺_秒', '冒頭3秒の掴み_映像', '（正）冒頭映像タイプ（主）', '（正）冒頭映像タグ1', '（正）冒頭映像タグ2', '（正）冒頭映像タグ3', '冒頭3秒の掴み_コピー', '（正）冒頭コピータイプ（主）', '（正）冒頭コピータグ1', '（正）冒頭コピータグ2', '（正）冒頭コピータグ3', 'ナレーション', 'BGM', '登場人物', 'シーン構成やテンポ', '主な訴求軸', '（正）訴求軸（主）', '（正）訴求タグ1', '（正）訴求タグ2', '喚起している感情', '（正）感情（主）', '（正）感情タグ1', '最後のCTA', '（正）CTAタイプ（主）', '（正）CTAタグ1', '（正）CTAタグ2', '（正）CTAタグ3', '（正）辞書バージョン', '（正）要レビュー', '（正）分類メモ', 'ステータス', '最終更新'];
   sheet.clear();
   sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
   sheet.setFrozenRows(1);
@@ -676,21 +676,23 @@ function analyzeAllVideos(apiKey) {
   const lastRow = videosSheet.getLastRow();
   if (lastRow < 2) return;
 
-  const values = videosSheet.getRange(2, 1, lastRow - 1, 3).getValues();
+  // videosシートから4列取得: 動画名, Meta動画ID, 動画URL, アップ日
+  const values = videosSheet.getRange(2, 1, lastRow - 1, 4).getValues();
   const outMap = buildOutputIndex(analysisSheet);
   let processed = 0;
 
   for (let i = 0; i < values.length; i++) {
     if (processed >= GEMINI_CONFIG.MAX_FILES_PER_RUN) break;
-    const [videoName, videoId, videoUrl] = values[i];
-    if (!videoUrl) continue;
+    const [videoName, metaVideoId, videoUrl] = values[i];
+    if (!videoUrl || !metaVideoId) continue;
 
-    const driveFileId = extractFileIdFromUrl(videoUrl);
-    const existingRow = outMap[driveFileId];
+    // Meta動画IDで既存レコードをチェック
+    const existingRow = outMap[String(metaVideoId)];
     const rowToWrite = existingRow || analysisSheet.getLastRow() + 1;
 
     if (!existingRow) {
-      analysisSheet.getRange(rowToWrite, 1, 1, 2).setValues([[videoName, driveFileId]]);
+      // 新規: Meta動画IDをB列に記録
+      analysisSheet.getRange(rowToWrite, 1, 1, 2).setValues([[videoName, metaVideoId]]);
     } else {
       const status = analysisSheet.getRange(existingRow, COL_STATUS).getValue();
       if (status === 'DONE') continue;
@@ -698,6 +700,9 @@ function analyzeAllVideos(apiKey) {
 
     try {
       analysisSheet.getRange(rowToWrite, COL_STATUS).setValue('UPLOADING');
+
+      // DriveファイルIDはURLから抽出（Geminiアップロード用）
+      const driveFileId = extractFileIdFromUrl(videoUrl);
       const driveFile = getDriveFileById(driveFileId);
       const maxBytes = GEMINI_CONFIG.MAX_FILE_SIZE_MB * 1024 * 1024;
       if (driveFile.getSize() > maxBytes) throw new Error(`ファイルが大きすぎます（>${GEMINI_CONFIG.MAX_FILE_SIZE_MB}MB）`);
@@ -709,7 +714,8 @@ function analyzeAllVideos(apiKey) {
 
       analysisSheet.getRange(rowToWrite, COL_STATUS).setValue('ANALYZING');
       const extracted = extractCreativeElements(apiKey, activeFile.uri, mimeType, driveFile.getName());
-      writeAnalysisRow(analysisSheet, rowToWrite, videoName, driveFileId, extracted);
+      // Meta動画IDをB列に記録
+      writeAnalysisRow(analysisSheet, rowToWrite, videoName, metaVideoId, extracted);
 
       analysisSheet.getRange(rowToWrite, COL_STATUS).setValue('DONE');
       analysisSheet.getRange(rowToWrite, COL_UPDATED).setValue(new Date());
