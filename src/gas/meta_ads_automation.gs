@@ -563,7 +563,7 @@ function setupVideosSheet(ss) {
 
 function setupAnalysisSheet(ss) {
   let sheet = ss.getSheetByName(SHEET_NAMES.ANALYSIS) || ss.insertSheet(SHEET_NAMES.ANALYSIS);
-  const headers = ['動画名', '固有ID', 'フォーマット', '時間', '尺_秒', '冒頭3秒の掴み_映像', '（正）冒頭映像タイプ（主）', '（正）冒頭映像タグ1', '（正）冒頭映像タグ2', '（正）冒頭映像タグ3', '冒頭3秒の掴み_コピー', '（正）冒頭コピータイプ（主）', '（正）冒頭コピータグ1', '（正）冒頭コピータグ2', '（正）冒頭コピータグ3', 'ナレーション', 'BGM', '登場人物', 'シーン構成やテンポ', '主な訴求軸', '（正）訴求軸（主）', '（正）訴求タグ1', '（正）訴求タグ2', '喚起している感情', '（正）感情（主）', '（正）感情タグ1', '最後のCTA', '（正）CTAタイプ（主）', '（正）CTAタグ1', '（正）CTAタグ2', '（正）CTAタグ3', '（正）辞書バージョン', '（正）要レビュー', '（正）分類メモ', 'ステータス', '最終更新'];
+  const headers = ['動画名', '固有ID', '（関数用）', 'フォーマット', '時間', '尺_秒', '冒頭3秒の掴み_映像', '（正）冒頭映像タイプ（主）', '（正）冒頭映像タグ1', '（正）冒頭映像タグ2', '（正）冒頭映像タグ3', '冒頭3秒の掴み_コピー', '（正）冒頭コピータイプ（主）', '（正）冒頭コピータグ1', '（正）冒頭コピータグ2', '（正）冒頭コピータグ3', 'ナレーション', 'BGM', '登場人物', 'シーン構成やテンポ', '主な訴求軸', '（正）訴求軸（主）', '（正）訴求タグ1', '（正）訴求タグ2', '喚起している感情', '（正）感情（主）', '（正）感情タグ1', '最後のCTA', '（正）CTAタイプ（主）', '（正）CTAタグ1', '（正）CTAタグ2', '（正）CTAタグ3', '（正）辞書バージョン', '（正）要レビュー', '（正）分類メモ', 'ステータス', '最終更新'];
   sheet.clear();
   sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
   sheet.setFrozenRows(1);
@@ -815,8 +815,12 @@ function writeAnalysisRow(sheet, row, fileName, fileId, d) {
   const em = padArray(d.norm_emotion_tags, 1);
   const ct = padArray(d.norm_cta_tags, 3);
 
-  sheet.getRange(row, 1, 1, 34).setValues([[
-    fileName, fileId, d.format, d.time, d.duration_seconds,
+  // A列、B列に動画名と固有IDを書き込み
+  sheet.getRange(row, 1, 1, 2).setValues([[fileName, fileId]]);
+
+  // D列以降に分析データを書き込み（C列は関数用にスキップ）
+  sheet.getRange(row, 4, 1, 32).setValues([[
+    d.format, d.time, d.duration_seconds,
     d.hook_visual_3sec, d.norm_hook_visual_type_main, hv[0], hv[1], hv[2],
     d.hook_copy_3sec, d.norm_hook_copy_type_main, hc[0], hc[1], hc[2],
     d.narration, d.bgm, (d.characters || []).join('\n'), d.scene_structure_tempo,
