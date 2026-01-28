@@ -20,30 +20,26 @@ const SHEET_NAMES = {
 // キャンペーン設定シートの列定義
 // ============================================
 const CAMPAIGN_COLS = {
-  CAMPAIGN_TYPE: 0,        // A: キャンペーン種別
-  CAMPAIGN_NUMBER: 1,      // B: キャンペーン番号
-  CAMPAIGN_NAME: 2,        // C: キャンペーン名
-  ADDRESS: 3,              // D: 住所
-  TARGET_RADIUS: 4,        // E: ターゲット半径
-  DAILY_BUDGET: 5,         // F: 日予算
-  START_DATE: 6,           // G: 開始日
-  START_TIME: 7,           // H: 開始時刻
-  END_DATE: 8,             // I: 終了日
-  END_TIME: 9,             // J: 終了時刻
-  LP_URL: 10,              // K: LP URL
-  AD_HEADLINE: 11,         // L: 広告見出し
-  AD_BODY: 12,             // M: 広告本文
-  VIDEO_URL: 13,           // N: 動画URL
-  VIDEO_CR_NAME: 14,       // O: 動画クリエイティブ名
-  IMAGE_URL: 15,           // P: 画像URL（任意）
-  IMAGE_CR_NAME: 16,       // Q: 画像クリエイティブ名
-  STATUS: 17,              // R: ステータス
-  CAMPAIGN_ID: 18,         // S: キャンペーンID
-  ADSET_ID: 19,            // T: 広告セットID
-  AD_ID_VIDEO: 20,         // U: 広告ID（動画）
-  AD_ID_IMAGE: 21,         // V: 広告ID（画像）
-  PROCESSED_AT: 22,        // W: 処理日時
-  ERROR_MESSAGE: 23        // X: エラーメッセージ
+  CAMPAIGN_NUMBER: 0,      // A: キャンペーン番号
+  CAMPAIGN_NAME: 1,        // B: キャンペーン名
+  GENDER: 2,               // C: 性別（全員/男性/女性）
+  DAILY_BUDGET: 3,         // D: 日予算
+  START_DATE: 4,           // E: 開始日
+  START_TIME: 5,           // F: 開始時刻
+  END_DATE: 6,             // G: 終了日
+  END_TIME: 7,             // H: 終了時刻
+  LP_URL: 8,               // I: LP URL
+  AD_HEADLINE: 9,          // J: 広告見出し
+  AD_BODY: 10,             // K: 広告本文
+  VIDEO_URL: 11,           // L: 動画URL
+  IMAGE_URL: 12,           // M: 画像URL（任意）
+  STATUS: 13,              // N: ステータス
+  CAMPAIGN_ID: 14,         // O: キャンペーンID
+  ADSET_ID: 15,            // P: 広告セットID
+  AD_ID_VIDEO: 16,         // Q: 広告ID（動画）
+  VIDEO_ID: 17,            // R: Meta動画ID
+  PROCESSED_AT: 18,        // S: 処理日時
+  ERROR_MESSAGE: 19        // T: エラーメッセージ
 };
 
 // ============================================
@@ -56,10 +52,9 @@ const SETTINGS_ROWS = {
   PIXEL_ID: 3,
   AGE_MIN: 4,
   AGE_MAX: 5,
-  CPA_CAP: 6,
-  NOTIFICATION_EMAIL: 7,
-  ACCESS_TOKEN: 8,
-  GEMINI_API_KEY: 9
+  NOTIFICATION_EMAIL: 6,
+  ACCESS_TOKEN: 7,
+  GEMINI_API_KEY: 8
 };
 
 // ============================================
@@ -77,20 +72,31 @@ const VIDEOS_COLS = {
 // ============================================
 const META_API = {
   BASE_URL: 'https://graph.facebook.com/v21.0',
-  CAMPAIGN_OBJECTIVE_LEAD: 'OUTCOME_LEADS',
-  CAMPAIGN_OBJECTIVE_AWARENESS: 'OUTCOME_AWARENESS',
-  BID_STRATEGY: 'COST_CAP',
+  CAMPAIGN_OBJECTIVE: 'OUTCOME_SALES',        // 売上目的
+  BID_STRATEGY: 'LOWEST_COST_WITHOUT_CAP',    // 最大数量
   BILLING_EVENT: 'IMPRESSIONS',
+  OPTIMIZATION_GOAL: 'OFFSITE_CONVERSIONS',
+  CONVERSION_EVENT: 'PURCHASE',               // 購入イベント
   CTA_TYPE: 'LEARN_MORE'
 };
 
 // ============================================
-// 配置設定
+// ターゲティング設定
 // ============================================
-const PLACEMENTS = {
+const TARGETING = {
+  COUNTRIES: ['JP'],  // 日本全域
   publisher_platforms: ['facebook', 'instagram'],
   facebook_positions: ['feed'],
   instagram_positions: ['stream', 'story', 'reels']
+};
+
+// ============================================
+// 性別コード
+// ============================================
+const GENDER_CODES = {
+  '全員': null,      // 指定なし
+  '男性': [1],       // 男性のみ
+  '女性': [2]        // 女性のみ
 };
 
 // ============================================

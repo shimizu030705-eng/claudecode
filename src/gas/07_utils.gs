@@ -5,41 +5,12 @@
  */
 
 /**
- * 住所から座標を取得
- * @param {string} address - 住所
- * @returns {Object} {lat, lng}
- */
-function getCoordinatesFromAddress(address) {
-  try {
-    const geocoder = Maps.newGeocoder();
-    geocoder.setLanguage('ja');
-
-    const response = geocoder.geocode(address);
-
-    if (response.status !== 'OK' || response.results.length === 0) {
-      throw new Error(`住所から座標を取得できません: ${address}`);
-    }
-
-    const location = response.results[0].geometry.location;
-
-    return {
-      lat: location.lat,
-      lng: location.lng
-    };
-
-  } catch (error) {
-    throw new Error(`ジオコーディングエラー: ${error.message}`);
-  }
-}
-
-/**
  * キャンペーン名を生成
  * @param {Object} campaign - キャンペーン設定
  * @returns {string} キャンペーン名
  */
 function generateCampaignName(campaign) {
-  const type = campaign.campaignType === '認知' ? '認知' : 'リード獲得';
-  return `${campaign.campaignNumber}_${campaign.campaignName}_${type}_${campaign.targetRadius}km圏内`;
+  return `${campaign.campaignNumber}_${campaign.campaignName}`;
 }
 
 /**
@@ -48,24 +19,8 @@ function generateCampaignName(campaign) {
  * @returns {string} 広告セット名
  */
 function generateAdSetName(campaign) {
-  return `${campaign.campaignName}_${campaign.targetRadius}km圏内`;
-}
-
-/**
- * 広告名を生成
- * @param {Object} campaign - キャンペーン設定
- * @param {string} type - 'image' または 'video'
- * @returns {string} 広告名
- */
-function generateAdName(campaign, type) {
-  const date = new Date(campaign.startDate);
-  const mm = String(date.getMonth() + 1).padStart(2, '0');
-  const dd = String(date.getDate()).padStart(2, '0');
-
-  const typeCode = type === 'image' ? 'i' : 'm';
-  const crName = type === 'image' ? campaign.imageCrName : campaign.videoCrName;
-
-  return `${mm}${dd}_${typeCode}_${crName}`;
+  const genderLabel = campaign.gender || '全員';
+  return `${campaign.campaignName}_${genderLabel}`;
 }
 
 /**
@@ -182,9 +137,7 @@ function createSuccessEmailBody(successList) {
     body += `  キャンペーンID: ${item.campaignId}\n`;
     body += `  広告セットID: ${item.adsetId}\n`;
     body += `  広告ID（動画）: ${item.adIdVideo}\n`;
-    if (item.adIdImage) {
-      body += `  広告ID（画像）: ${item.adIdImage}\n`;
-    }
+    body += `  Meta動画ID: ${item.videoId}\n`;
     body += '\n';
   }
 
@@ -233,9 +186,7 @@ function createMixedEmailBody(successList, failedList) {
     body += `  キャンペーンID: ${item.campaignId}\n`;
     body += `  広告セットID: ${item.adsetId}\n`;
     body += `  広告ID（動画）: ${item.adIdVideo}\n`;
-    if (item.adIdImage) {
-      body += `  広告ID（画像）: ${item.adIdImage}\n`;
-    }
+    body += `  Meta動画ID: ${item.videoId}\n`;
     body += '\n';
   }
 

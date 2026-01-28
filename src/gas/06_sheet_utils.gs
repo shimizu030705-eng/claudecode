@@ -23,7 +23,6 @@ function getCommonSettings() {
     pixelId: data[SETTINGS_ROWS.PIXEL_ID][1],
     ageMin: data[SETTINGS_ROWS.AGE_MIN][1],
     ageMax: data[SETTINGS_ROWS.AGE_MAX][1],
-    cpaCap: data[SETTINGS_ROWS.CPA_CAP][1],
     notificationEmail: data[SETTINGS_ROWS.NOTIFICATION_EMAIL][1],
     accessToken: data[SETTINGS_ROWS.ACCESS_TOKEN][1],
     geminiApiKey: data[SETTINGS_ROWS.GEMINI_API_KEY] ? data[SETTINGS_ROWS.GEMINI_API_KEY][1] : ''
@@ -60,11 +59,9 @@ function getUnprocessedCampaigns() {
     if (status === STATUS.UNPROCESSED || status === '' || status === null) {
       campaigns.push({
         rowIndex: i + 1,
-        campaignType: row[CAMPAIGN_COLS.CAMPAIGN_TYPE],
         campaignNumber: row[CAMPAIGN_COLS.CAMPAIGN_NUMBER],
         campaignName: row[CAMPAIGN_COLS.CAMPAIGN_NAME],
-        address: row[CAMPAIGN_COLS.ADDRESS],
-        targetRadius: row[CAMPAIGN_COLS.TARGET_RADIUS],
+        gender: row[CAMPAIGN_COLS.GENDER] || '全員',
         dailyBudget: row[CAMPAIGN_COLS.DAILY_BUDGET],
         startDate: row[CAMPAIGN_COLS.START_DATE],
         startTime: row[CAMPAIGN_COLS.START_TIME],
@@ -74,9 +71,7 @@ function getUnprocessedCampaigns() {
         adHeadline: row[CAMPAIGN_COLS.AD_HEADLINE],
         adBody: row[CAMPAIGN_COLS.AD_BODY],
         videoUrl: row[CAMPAIGN_COLS.VIDEO_URL],
-        videoCrName: row[CAMPAIGN_COLS.VIDEO_CR_NAME],
-        imageUrl: row[CAMPAIGN_COLS.IMAGE_URL],
-        imageCrName: row[CAMPAIGN_COLS.IMAGE_CR_NAME]
+        imageUrl: row[CAMPAIGN_COLS.IMAGE_URL]
       });
     }
   }
@@ -99,7 +94,7 @@ function updateCampaignStatus(rowIndex, result) {
     sheet.getRange(rowIndex, CAMPAIGN_COLS.CAMPAIGN_ID + 1).setValue(result.campaignId);
     sheet.getRange(rowIndex, CAMPAIGN_COLS.ADSET_ID + 1).setValue(result.adsetId);
     sheet.getRange(rowIndex, CAMPAIGN_COLS.AD_ID_VIDEO + 1).setValue(result.adIdVideo);
-    sheet.getRange(rowIndex, CAMPAIGN_COLS.AD_ID_IMAGE + 1).setValue(result.adIdImage || '');
+    sheet.getRange(rowIndex, CAMPAIGN_COLS.VIDEO_ID + 1).setValue(result.videoId);
   } else {
     sheet.getRange(rowIndex, CAMPAIGN_COLS.ERROR_MESSAGE + 1).setValue(result.errorMessage);
   }
@@ -135,10 +130,10 @@ function addVideoRecord(videoName, videoId, videoUrl, uploadDate) {
  * @param {string} campaignId - キャンペーンID
  * @param {string} adsetId - 広告セットID
  * @param {string} adIdVideo - 動画広告ID
- * @param {string} adIdImage - 画像広告ID
+ * @param {string} videoId - Meta動画ID
  * @param {string} detail - 詳細
  */
-function addExecutionLog(campaignName, result, campaignId, adsetId, adIdVideo, adIdImage, detail) {
+function addExecutionLog(campaignName, result, campaignId, adsetId, adIdVideo, videoId, detail) {
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAMES.EXECUTION_LOG);
 
   if (!sheet) return;
@@ -150,7 +145,7 @@ function addExecutionLog(campaignName, result, campaignId, adsetId, adIdVideo, a
     campaignId,
     adsetId,
     adIdVideo,
-    adIdImage,
+    videoId,
     detail
   ]);
 }
@@ -172,11 +167,9 @@ function setupCampaignSettingsSheet(ss) {
   }
 
   const headers = [
-    'キャンペーン種別',
     'キャンペーン番号',
     'キャンペーン名',
-    '住所',
-    'ターゲット半径(km)',
+    '性別',
     '日予算(円)',
     '開始日',
     '開始時刻',
@@ -186,14 +179,12 @@ function setupCampaignSettingsSheet(ss) {
     '広告見出し',
     '広告本文',
     '動画URL',
-    '動画クリエイティブ名',
-    '画像URL',
-    '画像クリエイティブ名',
+    '画像URL（任意）',
     'ステータス',
     'キャンペーンID',
     '広告セットID',
     '広告ID（動画）',
-    '広告ID（画像）',
+    'Meta動画ID',
     '処理日時',
     'エラーメッセージ'
   ];
@@ -201,6 +192,12 @@ function setupCampaignSettingsSheet(ss) {
   sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
   sheet.setFrozenRows(1);
   sheet.autoResizeColumns(1, headers.length);
+
+  // 性別のドロップダウンを設定
+  const genderRule = SpreadsheetApp.newDataValidation()
+    .requireValueInList(['全員', '男性', '女性'], true)
+    .build();
+  sheet.getRange(2, CAMPAIGN_COLS.GENDER + 1, 100, 1).setDataValidation(genderRule);
 }
 
 /**
@@ -222,7 +219,6 @@ function setupCommonSettingsSheet(ss) {
     ['ピクセルID', ''],
     ['年齢下限', 18],
     ['年齢上限', 65],
-    ['CPA上限(円)', 5000],
     ['通知メールアドレス', ''],
     ['Meta Access Token', ''],
     ['Gemini API Key', '']
@@ -334,7 +330,7 @@ function setupExecutionLogSheet(ss) {
     'キャンペーンID',
     '広告セットID',
     '広告ID（動画）',
-    '広告ID（画像）',
+    'Meta動画ID',
     '詳細'
   ];
 

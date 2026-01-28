@@ -47,7 +47,7 @@ function executeCreateCampaigns() {
           campaignId: result.campaignId,
           adsetId: result.adsetId,
           adIdVideo: result.adIdVideo,
-          adIdImage: result.adIdImage
+          videoId: result.videoId
         });
 
         updateCampaignStatus(campaign.rowIndex, {
@@ -55,7 +55,7 @@ function executeCreateCampaigns() {
           campaignId: result.campaignId,
           adsetId: result.adsetId,
           adIdVideo: result.adIdVideo,
-          adIdImage: result.adIdImage
+          videoId: result.videoId
         });
 
         addExecutionLog(
@@ -64,7 +64,7 @@ function executeCreateCampaigns() {
           result.campaignId,
           result.adsetId,
           result.adIdVideo,
-          result.adIdImage,
+          result.videoId,
           'キャンペーン作成完了'
         );
 
@@ -100,32 +100,23 @@ function executeCreateCampaigns() {
  * @returns {Object} 作成されたIDの情報
  */
 function processCampaign(campaign, settings) {
-  // 1. 住所から緯度経度を取得
-  const coordinates = getCoordinatesFromAddress(campaign.address);
-
-  // 2. Drive から動画ファイルを取得
+  // 1. Drive から動画ファイルを取得
   const videoFileId = extractFileIdFromUrl(campaign.videoUrl);
   const videoBlob = getFileFromDriveById(videoFileId);
 
-  // 3. 画像ファイルを取得（設定されている場合）
+  // 2. 画像ファイルを取得（設定されている場合）
   let imageBlob = null;
   if (campaign.imageUrl) {
     const imageFileId = extractFileIdFromUrl(campaign.imageUrl);
     imageBlob = getFileFromDriveById(imageFileId);
   }
 
-  // 4. キャンペーンを作成
-  const campaignId = createCampaign(settings, campaign);
-
-  // 5. 広告セットを作成
-  const adsetId = createAdSet(settings, campaign, campaignId, coordinates);
-
-  // 6. 動画をアップロード
+  // 3. 動画をアップロード（先にアップロードしてvideoIdを取得）
   const videoResult = uploadVideo(settings, videoBlob);
   const videoId = videoResult.videoId;
   const videoThumbnailUrl = videoResult.thumbnailUrl;
 
-  // 7. videosシートに動画情報を自動記録
+  // 4. videosシートに動画情報を自動記録
   addVideoRecord(
     videoBlob.getName(),
     videoId,
@@ -133,42 +124,33 @@ function processCampaign(campaign, settings) {
     new Date()
   );
 
-  // 8. 画像をアップロード（設定されている場合）
+  // 5. キャンペーンを作成
+  const campaignId = createCampaign(settings, campaign);
+
+  // 6. 広告セットを作成（日本全域ターゲティング）
+  const adsetId = createAdSet(settings, campaign, campaignId);
+
+  // 7. 画像をアップロード（設定されている場合）
   let imageHash = null;
   if (imageBlob) {
     imageHash = uploadImage(settings, imageBlob);
   }
 
-  // 9. 動画広告を作成
+  // 8. 動画広告を作成（広告名にvideoIdを使用）
   const adIdVideo = createAd(
     settings,
     campaign,
     adsetId,
     imageHash,
     videoId,
-    'video',
     videoThumbnailUrl
   );
-
-  // 10. 画像広告を作成（画像が設定されている場合）
-  let adIdImage = null;
-  if (imageHash && campaign.imageCrName) {
-    adIdImage = createAd(
-      settings,
-      campaign,
-      adsetId,
-      imageHash,
-      null,
-      'image',
-      null
-    );
-  }
 
   return {
     campaignId: campaignId,
     adsetId: adsetId,
     adIdVideo: adIdVideo,
-    adIdImage: adIdImage || ''
+    videoId: videoId
   };
 }
 

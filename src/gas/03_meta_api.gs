@@ -13,13 +13,9 @@
 function createCampaign(settings, campaign) {
   const campaignName = generateCampaignName(campaign);
 
-  const objective = campaign.campaignType === '認知'
-    ? META_API.CAMPAIGN_OBJECTIVE_AWARENESS
-    : META_API.CAMPAIGN_OBJECTIVE_LEAD;
-
   const payload = {
     name: campaignName,
-    objective: objective,
+    objective: META_API.CAMPAIGN_OBJECTIVE,  // OUTCOME_SALES（売上）
     status: 'PAUSED',
     special_ad_categories: '[]',
     access_token: settings.accessToken
@@ -36,70 +32,55 @@ function createCampaign(settings, campaign) {
 }
 
 /**
- * 広告セットを作成
+ * 広告セットを作成（日本全域ターゲティング、最大数量入札）
  * @param {Object} settings - 共通設定
  * @param {Object} campaign - キャンペーン設定
  * @param {string} campaignId - キャンペーンID
- * @param {Object} coordinates - 座標 {lat, lng}
  * @returns {string} 広告セットID
  */
-function createAdSet(settings, campaign, campaignId, coordinates) {
+function createAdSet(settings, campaign, campaignId) {
   const adsetName = generateAdSetName(campaign);
 
   const startTime = combineDateTime(campaign.startDate, campaign.startTime);
   const endTime = campaign.endDate ? combineDateTime(campaign.endDate, campaign.endTime) : null;
 
+  // ターゲティング設定（日本全域）
   const targeting = {
     geo_locations: {
-      custom_locations: [{
-        latitude: coordinates.lat,
-        longitude: coordinates.lng,
-        radius: campaign.targetRadius,
-        distance_unit: 'kilometer'
-      }]
+      countries: TARGETING.COUNTRIES  // ['JP']
     },
     age_min: settings.ageMin,
     age_max: settings.ageMax,
-    publisher_platforms: PLACEMENTS.publisher_platforms,
-    facebook_positions: PLACEMENTS.facebook_positions,
-    instagram_positions: PLACEMENTS.instagram_positions,
+    publisher_platforms: TARGETING.publisher_platforms,
+    facebook_positions: TARGETING.facebook_positions,
+    instagram_positions: TARGETING.instagram_positions,
     targeting_automation: {
       advantage_audience: 0
     }
   };
 
-  const isAwareness = campaign.campaignType === '認知';
-  const optimizationGoal = isAwareness ? 'REACH' : 'OFFSITE_CONVERSIONS';
+  // 性別ターゲティングを追加
+  const genderCode = GENDER_CODES[campaign.gender];
+  if (genderCode) {
+    targeting.genders = genderCode;
+  }
 
   const payload = {
     name: adsetName,
     campaign_id: campaignId,
     status: 'PAUSED',
     billing_event: META_API.BILLING_EVENT,
-    optimization_goal: optimizationGoal,
+    optimization_goal: META_API.OPTIMIZATION_GOAL,  // OFFSITE_CONVERSIONS
+    bid_strategy: META_API.BID_STRATEGY,            // LOWEST_COST_WITHOUT_CAP（最大数量）
     daily_budget: String(Math.round(Number(campaign.dailyBudget))),
     start_time: String(startTime),
     targeting: JSON.stringify(targeting),
+    promoted_object: JSON.stringify({
+      pixel_id: settings.pixelId,
+      custom_event_type: META_API.CONVERSION_EVENT  // PURCHASE（購入）
+    }),
     access_token: settings.accessToken
   };
-
-  if (isAwareness) {
-    // 認知キャンペーン: 自動入札 + フリークエンシーキャップ
-    payload.bid_strategy = 'LOWEST_COST_WITHOUT_CAP';
-    payload.frequency_control_specs = JSON.stringify([{
-      event: 'IMPRESSIONS',
-      interval_days: 7,
-      max_frequency: 2
-    }]);
-  } else {
-    // 獲得キャンペーン: CPA上限 + ピクセル追跡
-    payload.bid_strategy = META_API.BID_STRATEGY;
-    payload.bid_amount = String(Math.round(Number(settings.cpaCap)));
-    payload.promoted_object = JSON.stringify({
-      pixel_id: settings.pixelId,
-      custom_event_type: 'LEAD'
-    });
-  }
 
   if (endTime) {
     payload.end_time = String(endTime);
@@ -245,20 +226,20 @@ function getVideoThumbnail(settings, videoId) {
 }
 
 /**
- * 広告を作成
+ * 動画広告を作成（広告名はMeta video_idを使用）
  * @param {Object} settings - 共通設定
  * @param {Object} campaign - キャンペーン設定
  * @param {string} adsetId - 広告セットID
- * @param {string|null} imageHash - 画像ハッシュ
- * @param {string|null} videoId - 動画ID
- * @param {string} type - 'image' または 'video'
+ * @param {string|null} imageHash - 画像ハッシュ（サムネイル用）
+ * @param {string} videoId - 動画ID
  * @param {string|null} videoThumbnailUrl - 動画サムネイルURL
  * @returns {string} 広告ID
  */
-function createAd(settings, campaign, adsetId, imageHash, videoId, type, videoThumbnailUrl) {
-  const adName = generateAdName(campaign, type);
+function createAd(settings, campaign, adsetId, imageHash, videoId, videoThumbnailUrl) {
+  // 広告名にMeta video_idを使用
+  const adName = videoId;
 
-  const creativeId = createAdCreative(settings, campaign, imageHash, videoId, type, videoThumbnailUrl);
+  const creativeId = createAdCreative(settings, campaign, imageHash, videoId, videoThumbnailUrl);
 
   const payload = {
     name: adName,
@@ -279,55 +260,39 @@ function createAd(settings, campaign, adsetId, imageHash, videoId, type, videoTh
 }
 
 /**
- * 広告クリエイティブを作成
+ * 動画広告クリエイティブを作成
  * @param {Object} settings - 共通設定
  * @param {Object} campaign - キャンペーン設定
  * @param {string|null} imageHash - 画像ハッシュ
- * @param {string|null} videoId - 動画ID
- * @param {string} type - 'image' または 'video'
+ * @param {string} videoId - 動画ID
  * @param {string|null} videoThumbnailUrl - 動画サムネイルURL
  * @returns {string} クリエイティブID
  */
-function createAdCreative(settings, campaign, imageHash, videoId, type, videoThumbnailUrl) {
-  const creativeName = `creative_${campaign.campaignName}_${type}`;
+function createAdCreative(settings, campaign, imageHash, videoId, videoThumbnailUrl) {
+  const creativeName = `creative_${videoId}`;
 
   let objectStorySpec = {
     page_id: settings.pageId,
     instagram_user_id: settings.instagramAccountId
   };
 
-  if (type === 'image') {
-    objectStorySpec.link_data = {
-      image_hash: imageHash,
-      link: campaign.lpUrl,
-      message: campaign.adBody,
-      name: campaign.adHeadline,
-      call_to_action: {
-        type: META_API.CTA_TYPE,
-        value: {
-          link: campaign.lpUrl
-        }
+  objectStorySpec.video_data = {
+    video_id: videoId,
+    link_description: campaign.adBody,
+    title: campaign.adHeadline,
+    call_to_action: {
+      type: META_API.CTA_TYPE,
+      value: {
+        link: campaign.lpUrl
       }
-    };
-  } else {
-    objectStorySpec.video_data = {
-      video_id: videoId,
-      link_description: campaign.adBody,
-      title: campaign.adHeadline,
-      call_to_action: {
-        type: META_API.CTA_TYPE,
-        value: {
-          link: campaign.lpUrl
-        }
-      }
-    };
-
-    // サムネイル設定
-    if (videoThumbnailUrl) {
-      objectStorySpec.video_data.image_url = videoThumbnailUrl;
-    } else if (imageHash) {
-      objectStorySpec.video_data.image_hash = imageHash;
     }
+  };
+
+  // サムネイル設定
+  if (videoThumbnailUrl) {
+    objectStorySpec.video_data.image_url = videoThumbnailUrl;
+  } else if (imageHash) {
+    objectStorySpec.video_data.image_hash = imageHash;
   }
 
   const payload = {
