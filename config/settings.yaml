@@ -1,0 +1,137 @@
+# =============================================================================
+# 株式デイトレード自動運用ツール - 設定ファイル
+# =============================================================================
+
+# --- 一般設定 ---
+general:
+  # 運用モード: "paper" (ペーパートレード) or "live" (実取引)
+  mode: "paper"
+  # ログレベル: DEBUG, INFO, WARNING, ERROR
+  log_level: "INFO"
+  # タイムゾーン
+  timezone: "Asia/Tokyo"
+
+# --- 監視対象銘柄 ---
+watchlist:
+  # 日本株 (Yahoo Finance形式: ティッカー.T)
+  symbols:
+    - "7203.T"   # トヨタ自動車
+    - "6758.T"   # ソニー
+    - "9984.T"   # ソフトバンクグループ
+    - "6861.T"   # キーエンス
+    - "8306.T"   # 三菱UFJ
+  # データ取得間隔 (秒)
+  fetch_interval: 30
+  # 監視する価格変動閾値 (%)
+  price_change_threshold: 2.0
+
+# --- テクニカル分析設定 ---
+technical_analysis:
+  # 移動平均線
+  sma_periods: [5, 25, 75]
+  ema_periods: [12, 26]
+  # RSI
+  rsi_period: 14
+  rsi_overbought: 70
+  rsi_oversold: 30
+  # MACD
+  macd_fast: 12
+  macd_slow: 26
+  macd_signal: 9
+  # ボリンジャーバンド
+  bollinger_period: 20
+  bollinger_std: 2
+  # VWAP
+  vwap_enabled: true
+  # 出来高分析
+  volume_sma_period: 20
+  volume_spike_threshold: 2.0
+
+# --- ファンダメンタルズ分析設定 ---
+fundamental_analysis:
+  # 分析実行頻度 (時間)
+  update_interval_hours: 24
+  # 評価基準
+  criteria:
+    max_per: 30.0          # PER上限
+    min_per: 5.0           # PER下限
+    max_pbr: 5.0           # PBR上限
+    min_roe: 8.0           # ROE下限 (%)
+    min_profit_margin: 5.0 # 利益率下限 (%)
+    max_debt_ratio: 60.0   # 負債比率上限 (%)
+
+# --- リスク管理設定 ---
+risk_management:
+  # 最大ポートフォリオ損失率 (%)
+  max_portfolio_loss: 5.0
+  # 1銘柄あたり最大損失率 (%)
+  max_single_loss: 2.0
+  # 1銘柄あたり最大投資比率 (%)
+  max_position_ratio: 20.0
+  # ストップロス (%)
+  stop_loss_percent: 3.0
+  # トレーリングストップ (%)
+  trailing_stop_percent: 2.0
+  # 利確ライン (%)
+  take_profit_percent: 5.0
+  # 最大同時保有銘柄数
+  max_positions: 5
+  # 1日の最大取引回数
+  max_daily_trades: 20
+  # 急変動検知閾値 (秒間変動率 %)
+  volatility_alert_threshold: 1.5
+  # 最大ドローダウン (%) - これを超えたら全ポジション決済
+  max_drawdown: 8.0
+  # 初期資金 (円)
+  initial_capital: 1000000
+
+# --- 通知設定 ---
+notifications:
+  # 通知を有効化
+  enabled: true
+  # 通知チャンネル
+  channels:
+    # Slack通知
+    slack:
+      enabled: false
+      webhook_url: ""  # .envファイルで設定
+    # Discord通知
+    discord:
+      enabled: false
+      webhook_url: ""  # .envファイルで設定
+    # LINE通知
+    line:
+      enabled: false
+      token: ""  # .envファイルで設定
+    # コンソール通知 (常時有効)
+    console:
+      enabled: true
+  # 通知トリガー
+  triggers:
+    - "trade_executed"       # 取引実行時
+    - "stop_loss_triggered"  # ストップロス発動時
+    - "price_alert"          # 価格急変動時
+    - "daily_summary"        # 日次サマリー
+    - "risk_warning"         # リスク警告時
+    - "system_error"         # システムエラー時
+
+# --- トレーディング戦略設定 ---
+trading_strategy:
+  # 使用する戦略
+  active_strategies:
+    - "momentum"       # モメンタム戦略
+    - "mean_reversion" # 平均回帰戦略
+    - "breakout"       # ブレイクアウト戦略
+  # シグナル合意閾値 (複数戦略の合意が必要)
+  signal_consensus_threshold: 2
+  # 最小シグナル強度 (0.0-1.0)
+  min_signal_strength: 0.6
+
+# --- バックテスト設定 ---
+backtest:
+  # デフォルト期間
+  default_period_days: 90
+  # 手数料率 (%)
+  commission_rate: 0.1
+  # スリッページ (%)
+  slippage: 0.05
